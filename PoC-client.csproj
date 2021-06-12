@@ -74,6 +74,7 @@
     <Reference Include="LUC.ApiClient, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dubstack-win\WpfClient\LUC.ApiClient\bin\x86\Debug\LUC.ApiClient.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="LUC.Common.PrismEvents, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
@@ -82,6 +83,7 @@
     <Reference Include="LUC.DVVSet, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dubstack-win\WpfClient\LUC.DVVSet\bin\Debug\LUC.DVVSet.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="LUC.Globalization, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
