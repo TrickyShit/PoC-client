@@ -71,6 +71,22 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="LUC.ApiClient, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dubstack-win\WpfClient\LUC.ApiClient\bin\x86\Debug\LUC.ApiClient.dll</HintPath>
+    </Reference>
+    <Reference Include="LUC.Common.PrismEvents, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dubstack-win\WpfClient\LUC.Common.PrismEvents\bin\Debug\LUC.Common.PrismEvents.dll</HintPath>
+    </Reference>
+    <Reference Include="LUC.DVVSet, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dubstack-win\WpfClient\LUC.DVVSet\bin\Debug\LUC.DVVSet.dll</HintPath>
+    </Reference>
+    <Reference Include="LUC.Globalization, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dubstack-win\WpfClient\LUC.Globalization\bin\Debug\LUC.Globalization.dll</HintPath>
+    </Reference>
     <Reference Include="LUC.Interfaces">
       <HintPath>..\..\dubstack-win\WpfClient\LUC.Interfaces\bin\x86\Debug\LUC.Interfaces.dll</HintPath>
     </Reference>
@@ -112,12 +128,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\dubstack-win\WpfClient\LUC.ApiClient\LUC.ApiClient.csproj">
-      <Project>{f071e944-a1ee-4aee-b74a-36fd5b246ba5}</Project>
-      <Name>LUC.ApiClient</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
