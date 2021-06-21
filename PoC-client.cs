@@ -11,7 +11,6 @@ using LUC.Services.Implementation.Models;
 
 namespace PoC_client
 {
-
     public class ConsoleApiClient
     {
         private const string Login = "integration1";
@@ -43,7 +42,7 @@ namespace PoC_client
             apiClient?.LogoutAsync();
         }
 
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             ApiClient apiClient = new ApiClient(currentUserProvider, loggingService)
             {
@@ -81,7 +80,7 @@ namespace PoC_client
                 while (!filesInRootFolder.Contains(fullPath));
                 FileInfo fileInfo = new FileInfo(fullPath);
                 var lightClient = new LightClient.LightClient();
-                var response = await lightClient.Upload("https://lightupon.cloud", loginresponse.Token, loginresponse.Id, "the-integrationtests-integration1-res", fileInfo.FullName,"");
+                var response = await lightClient.Upload("https://lightupon.cloud", loginresponse.Token, loginresponse.Id, "the-integrationtests-integration1-res", fileInfo.FullName, "");
                 Console.WriteLine(response.ToString());
             }
         }

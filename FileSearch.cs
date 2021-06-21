@@ -4,12 +4,12 @@ using System.IO;
 
 namespace PoC_client
 {
-    class FileSearch
+    internal class FileSearch
     {
-        public static IEnumerable<String> FilesInDirAndSubdir(String rootFolderPath, String fileSearchPattern)
+        public static IEnumerable<string> FilesInDirAndSubdir(string rootFolderPath, string fileSearchPattern)
         {
-            Func<String, IEnumerable<String>> funcToFind;
-            if (!String.IsNullOrWhiteSpace(fileSearchPattern))
+            Func<string, IEnumerable<string>> funcToFind;
+            if (!string.IsNullOrWhiteSpace(fileSearchPattern))
             {
                 funcToFind = (pathToFile) => Directory.GetFiles(pathToFile, fileSearchPattern);
             }
@@ -21,16 +21,16 @@ namespace PoC_client
             return FindFiles(rootFolderPath, funcToFind);
         }
 
-        private static List<String> FindFiles(String rootFolderPath, Func<String, IEnumerable<String>> funcToFind)
+        private static List<string> FindFiles(string rootFolderPath, Func<string, IEnumerable<string>> funcToFind)
         {
-            List<String> findFiles = new List<String>();
-            Queue<String> dirsToSearchFiles = new Queue<String>();
+            List<string> findFiles = new List<string>();
+            Queue<string> dirsToSearchFiles = new Queue<string>();
             dirsToSearchFiles.Enqueue(rootFolderPath);
 
             while (dirsToSearchFiles.Count > 0)
             {
-                String folderPath = dirsToSearchFiles.Dequeue();
-                IEnumerable<String> filesInOneDir;
+                string folderPath = dirsToSearchFiles.Dequeue();
+                IEnumerable<string> filesInOneDir;
                 try
                 {
                     filesInOneDir = funcToFind(folderPath);
@@ -41,10 +41,6 @@ namespace PoC_client
                 }
 
                 findFiles.AddRange(filesInOneDir);
-                //foreach (var file in filesInOneDir)
-                //{
-                //    findFiles.Addfile;
-                //}
 
                 var dirsInCurrentDir = Directory.GetDirectories(folderPath);
                 foreach (var dir in dirsInCurrentDir)
@@ -56,7 +52,7 @@ namespace PoC_client
             return findFiles;
         }
 
-        public static IEnumerable<String> FilesInDirAndSubdir(String rootFolderPath) => 
+        public static IEnumerable<string> FilesInDirAndSubdir(string rootFolderPath) =>
             FindFiles(rootFolderPath, (pathToDir) => Directory.GetFiles(pathToDir));
     }
 }
