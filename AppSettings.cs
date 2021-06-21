@@ -1,7 +1,7 @@
 ﻿namespace PoC_client
 {
-    using LUC.Services.Implementation.Models;
     using System.Collections.Generic;
+    using LUC.Services.Implementation.Models;
 
     internal class AppSettings
     {

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using LUC.ApiClient;
 using LUC.Interfaces;
-using LUC.Interfaces.OutputContracts;
 using LUC.Services.Implementation;
 using LUC.Services.Implementation.Models;
 
@@ -28,10 +27,9 @@ namespace PoC_client
         private static ISyncingObjectsList syncingObjectsList = new SyncingObjectsList();
 
         private static SettingsService settingsService = new SettingsService();
-
         private static UserSetting userSetting;
 
-        private ApiClient apiClient;
+        private readonly ApiClient apiClient;
 
         static ConsoleApiClient()
         {
@@ -44,7 +42,6 @@ namespace PoC_client
         {
             apiClient?.LogoutAsync();
         }
-
 
         static async Task Main(string[] args)
         {
@@ -83,8 +80,8 @@ namespace PoC_client
                 }
                 while (!filesInRootFolder.Contains(fullPath));
                 FileInfo fileInfo = new FileInfo(fullPath);
-
-                FileUploadResponse response = await apiClient.TryUploadAsync(fileInfo);
+                var lightClient = new LightClient.LightClient();
+                var response = await lightClient.Upload("https://lightupon.cloud", loginresponse.Token, loginresponse.Id, "the-integrationtests-integration1-res", fileInfo.FullName,"");
                 Console.WriteLine(response.ToString());
             }
         }

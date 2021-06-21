@@ -77,9 +77,6 @@
     <Reference Include="LUC.Common.PrismEvents">
       <HintPath>.\LUC.Common.PrismEvents.dll</HintPath>
     </Reference>
-    <Reference Include="LUC.DVVSet">
-      <HintPath>.\LUC.DVVSet.dll</HintPath>
-    </Reference>
     <Reference Include="LUC.Globalization">
       <HintPath>.\LUC.Globalization.dll</HintPath>
     </Reference>
@@ -112,11 +109,15 @@
     <PackageReference Include="CodeFluentRuntimeClient">
       <Version>1.0.0.844</Version>
     </PackageReference>
+    <PackageReference Include="LUC.DVVSet" Version="1.0.0.2" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client">
       <Version>5.2.7</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="System.Net.Http">
+      <Version>4.3.4</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +131,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LightClientUpload\LightClientUpload.csproj">
+      <Project>{499678ce-ee00-451c-a931-4cd4741184ec}</Project>
+      <Name>LightClientUpload</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
