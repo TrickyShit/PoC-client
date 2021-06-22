@@ -5,18 +5,12 @@
     using System.ComponentModel.Composition;
     using System.IO;
     using System.Linq;
-    using LUC.Interfaces;
-    using LUC.Services.Implementation.Models;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 
-    [Export(typeof(ISettingsService))]
-    internal class SettingsService : ISettingsService
+    internal class SettingsService
     {
         public AppSettings AppSettings { get; private set; }
-
-        [Import(typeof(ICurrentUserProvider))]
-        private ICurrentUserProvider CurrentUserProvider { get; set; }
 
         public string AppSettingsFilePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LightUponCloud", "appsettings.json");
 
@@ -83,7 +77,7 @@
             catch (Exception ex)
             {
                 // TODO Investigate IOException
-                Log.Error(ex, "SerializeSettingToFile error");
+                Console.WriteLine(ex.HelpLink, "SerializeSettingToFile error");
             }
         }
 
@@ -124,13 +118,14 @@
 
         private string GetUserLogin()
         {
-            if (CurrentUserProvider.LoggedUser == null ||
-                CurrentUserProvider.LoggedUser.Login == null)
+            CurrentUserProvider currentUserProvider = new CurrentUserProvider();
+            if (currentUserProvider.LoggedUser == null ||
+                currentUserProvider.LoggedUser.Login == null)
             {
-                throw new ArgumentNullException($"{nameof(CurrentUserProvider.LoggedUser)} or {nameof(CurrentUserProvider.LoggedUser.Login)}");
+                throw new ArgumentNullException($"{nameof(currentUserProvider.LoggedUser)} or {nameof(currentUserProvider.LoggedUser.Login)}");
             };
 
-            var login = CurrentUserProvider.LoggedUser.Login;
+            var login = currentUserProvider.LoggedUser.Login;
 
             var userSettings = AppSettings.SettingsPerUser.SingleOrDefault(x => x.Login == login);
 

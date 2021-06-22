@@ -55,4 +55,46 @@ namespace PoC_client
         public static IEnumerable<string> FilesInDirAndSubdir(string rootFolderPath) =>
             FindFiles(rootFolderPath, (pathToDir) => Directory.GetFiles(pathToDir));
     }
+
+    public interface IBucketName
+    {
+        string ServerName { get; }
+
+        string LocalName { get; }
+
+        bool IsSuccess { get; }
+
+        string ErrorMessage { get; }
+    }
+
+    public class BucketName : IBucketName
+    {
+        public BucketName(string serverName, string localName)
+        {
+            ServerName = serverName;
+            LocalName = localName;
+            IsSuccess = true;
+            ErrorMessage = string.Empty;
+        }
+
+        public BucketName(string errorMessage)
+        {
+            ErrorMessage = errorMessage;
+            IsSuccess = false;
+        }
+
+        public string ServerName { get; }
+
+        public string LocalName { get; }
+
+        public bool IsSuccess { get; }
+
+        public string ErrorMessage { get; }
+
+        public override string ToString()
+        {
+            return $"{ServerName} => {LocalName}";
+        }
+    }
+
 }
