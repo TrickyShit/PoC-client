@@ -5,8 +5,6 @@
     using System.ComponentModel.Composition;
     using System.IO;
     using System.Linq;
-    using LUC.Interfaces;
-    using LUC.Services.Implementation.Models;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 

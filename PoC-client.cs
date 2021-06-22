@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Sockets;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
-using LUC.ApiClient;
-using LUC.Interfaces;
 using LUC.Services.Implementation;
-using LUC.Services.Implementation.Models;
+using Newtonsoft.Json;
 
 namespace PoC_client
 {
@@ -15,41 +17,17 @@ namespace PoC_client
     {
         private const string Login = "integration1";
         private const string Password = "integration1";
+        private const string Host = "https://lightupon.cloud";
+        private static readonly UserSetting userSetting;
+        private readonly ApiSettings apiSettings;
 
-        [Import(typeof(ILoggingService))]
-        private static LoggingService loggingService = new LoggingService();
+        private WebClient client;
 
-        [Import(typeof(ICurrentUserProvider))]
-        private static ICurrentUserProvider currentUserProvider = new CurrentUserProvider();
-
-        [Import(typeof(ISyncingObjectsList))]
-        private static ISyncingObjectsList syncingObjectsList = new SyncingObjectsList();
-
-        private static SettingsService settingsService = new SettingsService();
-        private static UserSetting userSetting;
-
-        private readonly ApiClient apiClient;
-
-        static ConsoleApiClient()
-        {
-            loggingService.SettingsService = settingsService;
-            userSetting = settingsService.AppSettings.SettingsPerUser.Single((settings) => settings.Login == Login);
-            currentUserProvider.RootFolderPath = userSetting.RootFolderPath;
-        }
-
-        ~ConsoleApiClient()
-        {
-            apiClient?.LogoutAsync();
-        }
 
         private static async Task Main(string[] args)
         {
-            ApiClient apiClient = new ApiClient(currentUserProvider, loggingService)
-            {
-                SyncingObjectsList = syncingObjectsList
-            };
-
-            var loginresponse = await apiClient.LoginAsync(Login, Password);
+            ConsoleApiClient consoleApiClient = new ConsoleApiClient();
+            var loginresponse = await consoleApiClient.LoginAsync(Login, Password);
             Console.WriteLine(loginresponse.Message);
 
             while (true)
@@ -67,7 +45,7 @@ namespace PoC_client
 
                     if (filename.Length == 0) //added logout and exit of the program
                     {
-                        await apiClient.LogoutAsync();
+                        await consoleApiClient.LogoutAsync();
                         return;
                     }
                     filesInRootFolder = FileSearch.FilesInDirAndSubdir(rootFolder);
@@ -80,9 +58,144 @@ namespace PoC_client
                 while (!filesInRootFolder.Contains(fullPath));
                 FileInfo fileInfo = new FileInfo(fullPath);
                 var lightClient = new LightClient.LightClient();
-                var response = await lightClient.Upload("https://lightupon.cloud", loginresponse.Token, loginresponse.Id, "the-integrationtests-integration1-res", fileInfo.FullName, "");
+                var response = await lightClient.Upload(Host, loginresponse.Token, loginresponse.Id, "the-integrationtests-integration1-res", fileInfo.FullName, "");
                 Console.WriteLine(response.ToString());
             }
         }
+
+        private async Task<LoginResponse> LoginAsync(string login, string password)
+        {
+            CurrentUserProvider currentUserProvider = new CurrentUserProvider();
+            ApiSettings apiSettings = new ApiSettings();
+            try
+            {
+                using (var client = new RepeatableHttpClient())
+                {
+                    var stringContent = JsonConvert.SerializeObject(new LoginRequest
+                    {
+                        Login = "integration1",
+                        Password = "integration1"
+                    });
+
+                    var content = new StringContent(stringContent, Encoding.UTF8, "application/json");
+
+                    var response = await client.PostAsync(PostLoginUri(Host), content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        LoginResponse result;
+
+                        try
+                        {
+                            result = await response.Content.ReadAsAsync<LoginResponse>();
+
+                            var model = result.ToLoginServiceModel();
+                            currentUserProvider.SetLoggedUser(model);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.HelpLink, ex.Message);
+                            return new LoginResponse
+                            {
+                                IsSuccess = false,
+                                Message = "Can't read content from the response."
+                            };
+                        }
+
+                        apiSettings.InitializeAccessToken(result.Token);
+
+                        //InitOperations(apiSettings.AccessToken);   sync with server is not necessary for PoC-client
+
+                        this.client = new WebClient();
+                        this.client.Headers.Add(HttpRequestHeader.Authorization, "Token " + apiSettings.AccessToken);
+
+                        Console.WriteLine($"Logged as '{result.Login}' at {DateTime.UtcNow.ToLongTimeString()} {DateTime.UtcNow.ToLongDateString()}");
+
+                        return result;
+                    }
+                    else
+                    {
+                        var stringResult = await response.Content.ReadAsStringAsync();
+
+                        Console.WriteLine($"Can't login: {stringResult}. Status code = {response.StatusCode}");
+
+                        if (response.StatusCode == HttpStatusCode.Forbidden)
+                        {
+                            return new LoginResponse
+                            {
+                                IsSuccess = false,
+                                Message = "Wrong login or password"
+                            };
+                        }
+                        else
+                        {
+                            return new LoginResponse
+                            {
+                                IsSuccess = false,
+                                Message = string.Format("Can not login. Please contact our support team. Status code: {0}", response.StatusCode)
+                            };
+                        }
+                    }
+                }
+            }
+            catch (HttpRequestException)
+            {
+                return new LoginResponse
+                {
+                    IsSuccess = false,
+                    Message = "No connection at the moment..."
+                };
+            }
+            catch (WebException)
+            {
+                return new LoginResponse
+                {
+                    IsSuccess = false,
+                    Message = "No connection at the moment..."
+                };
+            }
+            catch (SocketException)
+            {
+                return new LoginResponse
+                {
+                    IsSuccess = false,
+                    Message = "No connection at the moment..."
+                };
+            }
+        }
+
+        private async Task<LogoutResponse> LogoutAsync()
+        {
+            var result = new LogoutResponse();
+
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync(BuildUriExtensions.GetLogoutUri(apiSettings.Host));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    apiSettings.InitializeAccessToken(string.Empty);
+                    return result;
+                }
+                else
+                {
+                    var stringResult = await response.Content.ReadAsStringAsync();
+
+                    LoggingService.LogError("Can't logout: " + stringResult);
+
+                    result.IsSuccess = false;
+                    result.Message = stringResult;
+                    return result;
+                }
+            }
+        }
+        private static string PostLoginUri(string host)
+        {
+            var result = Combine(host, Riak, "login");
+
+            return result;
+        }
+
+
     }
 }

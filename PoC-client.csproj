@@ -71,21 +71,6 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LUC.ApiClient">
-      <HintPath>.\LUC.ApiClient.dll</HintPath>
-    </Reference>
-    <Reference Include="LUC.Common.PrismEvents">
-      <HintPath>.\LUC.Common.PrismEvents.dll</HintPath>
-    </Reference>
-    <Reference Include="LUC.Globalization">
-      <HintPath>.\LUC.Globalization.dll</HintPath>
-    </Reference>
-    <Reference Include="LUC.Interfaces">
-      <HintPath>.\LUC.Interfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="LUC.Services.Implementation">
-      <HintPath>.\LUC.Services.Implementation.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
@@ -97,6 +82,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppSettings.cs" />
+    <Compile Include="CurrentUserProvider.cs" />
+    <Compile Include="Json.cs" />
     <Compile Include="FileSearch.cs" />
     <Compile Include="PoC-client.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
