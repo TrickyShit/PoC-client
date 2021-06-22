@@ -27,7 +27,7 @@ namespace PoC_client
         private WebClient client;
 
         #endregion
-
+        private static ICurrentUserProvider currentUserProvider = new CurrentUserProvider();
         #region Properties
 
         public CurrentUserProvider CurrentUserProvider { get; set; }
@@ -52,6 +52,7 @@ namespace PoC_client
         }
 
         #endregion
+
 
         private static async Task Main(string[] args)
         {
@@ -89,7 +90,6 @@ namespace PoC_client
                 var lightClient = new LightClient.LightClient();
                 var response = await lightClient.Upload(Host, loginresponse.Token, loginresponse.Id, "the-integrationtests-integration1-res", fileInfo.FullName, "");
                 Console.WriteLine(response.ToString());
-            }
         }
 
         private async Task<LoginResponse> LoginAsync(string login, string password)
@@ -247,5 +247,6 @@ namespace PoC_client
             return result;
         }
 
+        }
     }
 }
