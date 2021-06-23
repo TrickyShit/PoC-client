@@ -6,11 +6,51 @@ using System.Linq;
 
 namespace PoC_client
 {
-    public class CurrentUserProvider
+    public interface ICurrentUserProvider
     {
+        event EventHandler RootFolderPathChanged;
+
+        string RootFolderPath { get; set; }
+
+        LoginServiceModel LoggedUser { get; }
+
+        void SetLoggedUser(LoginServiceModel model);
+
+        void UpdateLoggedUserGroups(List<GroupServiceModel> groups);
+
+        IBucketName TryExtractBucket(string fileFullPath);
+
+        string ExtractPrefix(string fileFullPath);
+
+        IBucketName GetBucketNameByDirectoryPath(string directoryPath);
+
+        IList<string> ProvideBucketDirectoryPathes();
+
+        IList<string> GetServerBuckets();
+    }
+
+    public interface IPathFiltrator
+    {
+        IList<string> FoldersToIgnore { get; }
+
+        bool IsPathPertinent(string fullPath);
+
+        void ReadFromSettings();
+
+        void UpdateSubFoldersToIgnore(IList<string> pathes);
+
+        void UpdateCurrentBuckets(List<string> pathes);
+    }
+
+    public class CurrentUserProvider : ICurrentUserProvider
+    {
+        [Import(typeof(IPathFiltrator))]
+        public IPathFiltrator PathFiltrator { get; set; }
+
         public LoginServiceModel LoggedUser { get; private set; }
 
         private string rootFolderPath;
+
         public string RootFolderPath
         {
             get
@@ -21,10 +61,7 @@ namespace PoC_client
             {
                 rootFolderPath = value;
                 TryCreateLocalBuckets();
-                if (RootFolderPathChanged != null)
-                {
-                    RootFolderPathChanged(this, EventArgs.Empty);
-                }
+                RootFolderPathChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -42,14 +79,7 @@ namespace PoC_client
             var afterRootPath = fileFullPath.Substring(RootFolderPath.Length + 1, fileFullPath.Length - RootFolderPath.Length - 1);
             var dashIndex = afterRootPath.IndexOf('\\');
 
-            if (dashIndex == -1)
-            {
-                localBucketName = afterRootPath;
-            }
-            else
-            {
-                localBucketName = afterRootPath.Substring(0, dashIndex);
-            }
+            localBucketName = dashIndex == -1 ? afterRootPath : afterRootPath.Substring(0, dashIndex);
 
             var group = LoggedUser.Groups.SingleOrDefault(x => x.Name.ToLowerInvariant() == localBucketName.ToLowerInvariant());
 
@@ -63,8 +93,6 @@ namespace PoC_client
 
             return result;
         }
-
-
 
         // TODO 1.0 Unit tests
         public IBucketName GetBucketNameByDirectoryPath(string directoryPath)
@@ -138,7 +166,6 @@ namespace PoC_client
 
             return result;
         }
-
 
         public void SetLoggedUser(LoginServiceModel model)
         {

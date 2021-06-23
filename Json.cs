@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using LightClient;
 using Newtonsoft.Json;
 
@@ -50,6 +46,4 @@ namespace PoC_client
         [JsonProperty("name")]
         public string Name { get; set; }
     }
-
-
 }

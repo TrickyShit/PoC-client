@@ -3,61 +3,46 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using LUC.Services.Implementation;
 using Newtonsoft.Json;
-using LightClient;
 
 namespace PoC_client
 {
     public class ConsoleApiClient
     {
-        #region Fields
-
         private const string Login = "integration1";
         private const string Password = "integration1";
         private const string Host = "https://lightupon.cloud";
-        private static readonly UserSetting userSetting;
-        private readonly ApiSettings apiSettings;
 
+        [Import(typeof(ICurrentUserProvider))]
+        private static ICurrentUserProvider currentUserProvider = new CurrentUserProvider();
+
+        private static SettingsService settingsService = new SettingsService();
+        private ICurrentUserProvider currentUserProvider1;
+        private static readonly UserSetting userSetting;
+        public readonly ApiSettings apiSettings;
         private WebClient client;
 
-        #endregion
-        private static CurrentUserProvider currentUserProvider = new CurrentUserProvider();
-        #region Properties
-
-        public CurrentUserProvider CurrentUserProvider { get; set; }
-
-        [Import(typeof(PathFiltrator))]
-        private PathFiltrator PathFiltrator { get; set; }
-
-        private readonly Action currentUploadChunkAction;
-        #endregion
-
-        #region Constructors
-
-        [ImportingConstructor]
-        public ConsoleApiClient(CurrentUserProvider currentUserProvider)
+        static ConsoleApiClient()
         {
-            apiSettings = new ApiSettings();
-            CurrentUserProvider = currentUserProvider;
+            userSetting = settingsService.AppSettings.SettingsPerUser.Single((settings) => settings.Login == Login);
+            currentUserProvider.RootFolderPath = userSetting.RootFolderPath;
         }
 
-        public ConsoleApiClient()
+        public ConsoleApiClient(ICurrentUserProvider currentUserProvider1)
         {
+            this.currentUserProvider1 = currentUserProvider1;
         }
 
-        #endregion
-
-
-        private static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            ConsoleApiClient consoleApiClient = new ConsoleApiClient();
-            var loginresponse = await LoginAsync(Login, Password);
+            var consoleApiClient = new ConsoleApiClient(currentUserProvider);
+            var loginresponse = await consoleApiClient.LoginAsync(Login, Password);
             Console.WriteLine(loginresponse.Message);
 
             while (true)
@@ -75,7 +60,7 @@ namespace PoC_client
 
                     if (filename.Length == 0) //added logout and exit of the program
                     {
-                        await LogoutAsync();
+                        await consoleApiClient.LogoutAsync();
                         return;
                     }
                     filesInRootFolder = FileSearch.FilesInDirAndSubdir(rootFolder);
@@ -91,162 +76,164 @@ namespace PoC_client
                 var response = await lightClient.Upload(Host, loginresponse.Token, loginresponse.Id, "the-integrationtests-integration1-res", fileInfo.FullName, "");
                 Console.WriteLine(response.ToString());
             }
+        }
 
-            async Task<LoginResponse> LoginAsync(string login, string password)
+        private async Task<LoginResponse> LoginAsync(string login, string password)
+        {
+            CurrentUserProvider currentUserProvider = new CurrentUserProvider();
+            ApiSettings apiSettings = new ApiSettings();
+            try
             {
-                CurrentUserProvider currentUserProvider = new CurrentUserProvider();
-                ApiSettings apiSettings = new ApiSettings();
-                try
-                {
-                    using (var client = new RepeatableHttpClient())
-                    {
-                        var stringContent = JsonConvert.SerializeObject(new LoginRequest
-                        {
-                            Login = "integration1",
-                            Password = "integration1"
-                        });
-
-                        var content = new StringContent(stringContent, Encoding.UTF8, "application/json");
-
-                        var response = await client.PostAsync(PostLoginUri(Host), content);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            LoginResponse result;
-
-                            try
-                            {
-                                result = JsonConvert.DeserializeObject<LoginResponse>(
-                                    await response.Content.ReadAsStringAsync());
-
-                                var model = result.ToLoginServiceModel();
-                                currentUserProvider.SetLoggedUser(model);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.HelpLink, ex.Message);
-                                return new LoginResponse
-                                {
-                                    IsSuccess = false,
-                                    Message = "Can't read content from the response."
-                                };
-                            }
-
-                            apiSettings.InitializeAccessToken(result.Token);
-
-                            //InitOperations(apiSettings.AccessToken);   sync with server is not necessary for PoC-client
-
-                            this.client = new WebClient();
-                            this.client.Headers.Add(HttpRequestHeader.Authorization, "Token " + apiSettings.AccessToken);
-
-                            Console.WriteLine($"Logged as '{result.Login}' at {DateTime.UtcNow.ToLongTimeString()} {DateTime.UtcNow.ToLongDateString()}");
-
-                            return result;
-                        }
-                        else
-                        {
-                            var stringResult = await response.Content.ReadAsStringAsync();
-
-                            Console.WriteLine($"Can't login: {stringResult}. Status code = {response.StatusCode}");
-
-                            if (response.StatusCode == HttpStatusCode.Forbidden)
-                            {
-                                return new LoginResponse
-                                {
-                                    IsSuccess = false,
-                                    Message = "Wrong login or password"
-                                };
-                            }
-                            else
-                            {
-                                return new LoginResponse
-                                {
-                                    IsSuccess = false,
-                                    Message = string.Format("Can not login. Please contact our support team. Status code: {0}", response.StatusCode)
-                                };
-                            }
-                        }
-                    }
-                }
-                catch (HttpRequestException)
-                {
-                    return new LoginResponse
-                    {
-                        IsSuccess = false,
-                        Message = "No connection at the moment..."
-                    };
-                }
-                catch (WebException)
-                {
-                    return new LoginResponse
-                    {
-                        IsSuccess = false,
-                        Message = "No connection at the moment..."
-                    };
-                }
-                catch (SocketException)
-                {
-                    return new LoginResponse
-                    {
-                        IsSuccess = false,
-                        Message = "No connection at the moment..."
-                    };
-                }
-            }
-
-            private async Task<LogoutResponse> LogoutAsync()
-            {
-                var result = new LogoutResponse();
-
                 using (var client = new HttpClient())
                 {
-                    var response = await client.GetAsync(GetLogoutUri(apiSettings.Host));
+                    var stringContent = JsonConvert.SerializeObject(new LoginRequest
+                    {
+                        Login = "integration1",
+                        Password = "integration1"
+                    });
+
+                    var content = new StringContent(stringContent, Encoding.UTF8, "application/json");
+
+                    var response = await client.PostAsync(PostLoginUri(Host), content);
 
                     if (response.IsSuccessStatusCode)
                     {
-                        apiSettings.InitializeAccessToken(string.Empty);
+                        LoginResponse result;
+
+                        try
+                        {
+                            result = JsonConvert.DeserializeObject<LoginResponse>(
+                                await response.Content.ReadAsStringAsync());
+
+                            var model = result.ToLoginServiceModel();
+                            currentUserProvider.SetLoggedUser(model);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.HelpLink, ex.Message);
+                            return new LoginResponse
+                            {
+                                IsSuccess = false,
+                                Message = "Can't read content from the response."
+                            };
+                        }
+
+                        apiSettings.InitializeAccessToken(result.Token);
+
+                        //InitOperations(apiSettings.AccessToken);   sync with server is not necessary for PoC-client
+
+                        this.client = new WebClient();
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", apiSettings.AccessToken);
+
+                        Console.WriteLine($"Logged as '{result.Login}' at {DateTime.UtcNow.ToLongTimeString()} {DateTime.UtcNow.ToLongDateString()}");
+
                         return result;
                     }
                     else
                     {
                         var stringResult = await response.Content.ReadAsStringAsync();
 
-                        Console.WriteLine("Can't logout: " + stringResult);
+                        Console.WriteLine($"Can't login: {stringResult}. Status code = {response.StatusCode}");
 
-                        result.IsSuccess = false;
-                        result.Message = stringResult;
-                        return result;
+                        if (response.StatusCode == HttpStatusCode.Forbidden)
+                        {
+                            return new LoginResponse
+                            {
+                                IsSuccess = false,
+                                Message = "Wrong login or password"
+                            };
+                        }
+                        else
+                        {
+                            return new LoginResponse
+                            {
+                                IsSuccess = false,
+                                Message = string.Format("Can not login. Please contact our support team. Status code: {0}", response.StatusCode)
+                            };
+                        }
                     }
                 }
             }
-            private static string PostLoginUri(string host)
+            catch (HttpRequestException)
             {
-                var result = Combine(host, "riak", "login");
-
-                return result;
-            }
-
-            public static string GetLogoutUri(string host)
-            {
-                var result = Combine(host, "riak", "logout");
-
-                return result;
-            }
-
-            public static string Combine(params string[] uri)
-            {
-                uri[0] = uri[0].TrimEnd('/');
-                string result = "";
-                result += uri[0] + "/";
-                for (var i = 1; i < uri.Length; i++)
+                return new LoginResponse
                 {
-                    uri[i] = uri[i].TrimStart('/');
-                    uri[i] = uri[i].TrimEnd('/');
-                    result += uri[i] + "/";
-                }
-                return result;
+                    IsSuccess = false,
+                    Message = "No connection at the moment..."
+                };
             }
+            catch (WebException)
+            {
+                return new LoginResponse
+                {
+                    IsSuccess = false,
+                    Message = "No connection at the moment..."
+                };
+            }
+            catch (SocketException)
+            {
+                return new LoginResponse
+                {
+                    IsSuccess = false,
+                    Message = "No connection at the moment..."
+                };
+            }
+        }
 
+        private async Task<LogoutResponse> LogoutAsync()
+        {
+            var consoleApiClient = new ConsoleApiClient(currentUserProvider);
+            var result = new LogoutResponse();
+            ApiSettings apiSettings = new ApiSettings();
+
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync(consoleApiClient.GetLogoutUri(Host));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    apiSettings.InitializeAccessToken(string.Empty);
+                    return result;
+                }
+                else
+                {
+                    var stringResult = await response.Content.ReadAsStringAsync();
+
+                    Console.WriteLine("Can't logout: " + stringResult);
+
+                    result.IsSuccess = false;
+                    result.Message = stringResult;
+                    return result;
+                }
+            }
+        }
+
+        private string PostLoginUri(string host)
+        {
+            var result = Combine(host, "riak", "login");
+
+            return result;
+        }
+
+        private string GetLogoutUri(string host)
+        {
+            var result = Combine(host, "riak", "logout");
+
+            return result;
+        }
+
+        private string Combine(params string[] uri)
+        {
+            uri[0] = uri[0].TrimEnd('/');
+            string result = "";
+            result += uri[0] + "/";
+            for (var i = 1; i < uri.Length; i++)
+            {
+                uri[i] = uri[i].TrimStart('/');
+                uri[i] = uri[i].TrimEnd('/');
+                result += uri[i] + "/";
+            }
+            return result;
         }
     }
 }

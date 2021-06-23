@@ -96,5 +96,4 @@ namespace PoC_client
             return $"{ServerName} => {LocalName}";
         }
     }
-
 }

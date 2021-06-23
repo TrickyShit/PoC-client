@@ -11,29 +11,6 @@ namespace PoC_client
         {
             FoldersToIgnore = new List<string>();
         }
-    public class UserSetting
-    {
-        public UserSetting()
-        {
-            FoldersToIgnore = new List<string>();
-        }
-
-        public string Login { get; set; }
-
-        public string RootFolderPath { get; set; }
-
-        public bool IsRememberLogin { get; set; }
-
-        public bool IsRememberPassword { get; set; }
-
-        public string Base64Password { get; set; }
-
-        public string Base64EncryptionKey { get; set; }
-
-        public DateTime LastSyncDateTime { get; set; }
-
-        public IList<string> FoldersToIgnore { get; set; }
-    }
 
         public string Login { get; set; }
 
@@ -93,13 +70,10 @@ namespace PoC_client
         public string Login { get; set; }
 
         public string Id { get; set; }
-
     }
 
     public class ApiSettings
     {
-
-
         public ApiSettings()
         {
             var host = ConfigurationManager.AppSettings["RestApiHost"];
@@ -216,7 +190,5 @@ namespace PoC_client
 
             return result;
         }
-
     }
-
 }
