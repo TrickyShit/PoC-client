@@ -88,8 +88,8 @@ namespace PoC_client
                 {
                     var stringContent = JsonConvert.SerializeObject(new LoginRequest
                     {
-                        Login = "integration1",
-                        Password = "integration1"
+                        Login = login,
+                        Password = password
                     });
 
                     var content = new StringContent(stringContent, Encoding.UTF8, "application/json");
